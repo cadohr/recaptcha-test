@@ -2,43 +2,424 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Teste reCAPTCHA Enterprise Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>reCAPTCHA Enterprise - Policy Challenge Test</title>
+
+    <!-- TROQUE PELA SUA SITE KEY -->
     <script
-        src="https://www.google.com/recaptcha/enterprise.js?render=6Ld1a-AtAAAAALr11xfUhJyQe1cclcvX4sB3R2aT">
+        src="https://www.google.com/recaptcha/enterprise.js?render=SUA_SITE_KEY">
     </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .status {
+            padding: 15px;
+            background: #f5f5f5;
+            margin: 20px 0;
+        }
+
+        .summary {
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Teste reCAPTCHA Enterprise</h1>
+<h1>reCAPTCHA Enterprise Test</h1>
 
 <p>
-    Clique no botão abaixo para executar o reCAPTCHA.
+    Teste de Web Key com Policy-based Challenge + createAssessment.
 </p>
 
-<button
-    class="g-recaptcha"
-    data-sitekey="6Ld1a-AtAAAAALr11xfUhJyQe1cclcvX4sB3R2aT"
-    data-callback="onSubmit"
-    data-action="submit">
+<label>
+    Project ID
+</label>
+
+<input
+    id="projectId"
+    placeholder="meu-project-id"
+/>
+
+<label>
+    OAuth Access Token
+</label>
+
+<input
+    id="accessToken"
+    type="password"
+    placeholder="ya29..."
+/>
+
+<label>
+    Action
+</label>
+
+<input
+    id="action"
+    value="LOGIN"
+/>
+
+<button id="executeButton">
     Executar teste
 </button>
 
-<h2>Resultado</h2>
+<div class="status" id="status">
+    Aguardando...
+</div>
 
-<pre id="result">
-Aguardando execução...
+<h2>Resumo do Assessment</h2>
+
+<div class="summary" id="summary">
+    Ainda não executado.
+</div>
+
+<h2>Token</h2>
+
+<pre id="tokenOutput">
+Ainda não gerado.
 </pre>
 
-<script>
-    function onSubmit(token) {
-        console.log("TOKEN RECEBIDO:");
-        console.log(token);
+<h2>Assessment completo</h2>
 
-        document.getElementById("result").textContent =
-            "TOKEN RECEBIDO:\n\n" + token;
+<pre id="assessmentOutput">
+Ainda não criado.
+</pre>
+
+
+<script>
+
+    /*
+     * TROQUE PELA MESMA SITE KEY
+     * usada no <script> do HEAD.
+     */
+    const SITE_KEY = "SUA_SITE_KEY";
+
+
+    const statusElement =
+        document.getElementById("status");
+
+    const tokenOutput =
+        document.getElementById("tokenOutput");
+
+    const assessmentOutput =
+        document.getElementById("assessmentOutput");
+
+    const summaryElement =
+        document.getElementById("summary");
+
+
+    function status(message) {
+
+        console.log(message);
+
+        statusElement.textContent = message;
+
     }
+
+
+    document
+        .getElementById("executeButton")
+        .addEventListener("click", async () => {
+
+            const projectId =
+                document
+                    .getElementById("projectId")
+                    .value
+                    .trim();
+
+            const accessToken =
+                document
+                    .getElementById("accessToken")
+                    .value
+                    .trim();
+
+            const action =
+                document
+                    .getElementById("action")
+                    .value
+                    .trim();
+
+
+            if (!projectId) {
+
+                alert("Informe o Project ID.");
+
+                return;
+
+            }
+
+
+            if (!accessToken) {
+
+                alert("Informe o OAuth Access Token.");
+
+                return;
+
+            }
+
+
+            if (!action) {
+
+                alert("Informe a action.");
+
+                return;
+
+            }
+
+
+            try {
+
+                /*
+                 * ==========================================
+                 * ETAPA 1
+                 * Executar reCAPTCHA
+                 * ==========================================
+                 */
+
+                status(
+                    "1/4 - Executando reCAPTCHA para action: "
+                    + action
+                    + "..."
+                );
+
+
+                const token =
+                    await grecaptcha.enterprise.execute(
+                        SITE_KEY,
+                        {
+                            action: action
+                        }
+                    );
+
+
+                /*
+                 * Se a Policy-based Challenge decidir
+                 * apresentar CAPTCHA, ele deverá acontecer
+                 * ANTES deste ponto.
+                 */
+
+                status(
+                    "2/4 - Token recebido. Challenge concluído ou não necessário."
+                );
+
+
+                console.log(
+                    "reCAPTCHA token:",
+                    token
+                );
+
+
+                tokenOutput.textContent =
+                    token;
+
+
+                /*
+                 * ==========================================
+                 * ETAPA 2
+                 * CREATE ASSESSMENT
+                 * ==========================================
+                 */
+
+                status(
+                    "3/4 - Criando Assessment..."
+                );
+
+
+                const url =
+                    "https://recaptchaenterprise.googleapis.com/v1/projects/"
+                    + encodeURIComponent(projectId)
+                    + "/assessments";
+
+
+                const requestBody = {
+
+                    event: {
+
+                        token: token,
+
+                        siteKey: SITE_KEY,
+
+                        expectedAction: action
+
+                    }
+
+                };
+
+
+                console.log(
+                    "Assessment request:",
+                    requestBody
+                );
+
+
+                const response =
+                    await fetch(
+                        url,
+                        {
+                            method: "POST",
+
+                            headers: {
+
+                                "Authorization":
+                                    "Bearer " + accessToken,
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify(requestBody)
+
+                        }
+                    );
+
+
+                /*
+                 * ==========================================
+                 * ETAPA 3
+                 * LER RESPOSTA
+                 * ==========================================
+                 */
+
+                const assessment =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Erro HTTP "
+                        + response.status
+                        + "\n\n"
+                        + JSON.stringify(
+                            assessment,
+                            null,
+                            2
+                        )
+                    );
+
+                }
+
+
+                status(
+                    "4/4 - Assessment criado com sucesso."
+                );
+
+
+                console.log(
+                    "Assessment:",
+                    assessment
+                );
+
+
+                assessmentOutput.textContent =
+                    JSON.stringify(
+                        assessment,
+                        null,
+                        2
+                    );
+
+
+                /*
+                 * ==========================================
+                 * RESUMO
+                 * ==========================================
+                 */
+
+                const tokenProperties =
+                    assessment.tokenProperties || {};
+
+                const riskAnalysis =
+                    assessment.riskAnalysis || {};
+
+
+                const valid =
+                    tokenProperties.valid;
+
+                const returnedAction =
+                    tokenProperties.action;
+
+                const score =
+                    riskAnalysis.score;
+
+                const reasons =
+                    riskAnalysis.reasons || [];
+
+
+                summaryElement.innerHTML = `
+
+                    <strong>Token válido:</strong>
+                    ${valid}
+                    <br><br>
+
+                    <strong>Action esperada:</strong>
+                    ${action}
+                    <br>
+
+                    <strong>Action retornada:</strong>
+                    ${returnedAction}
+                    <br><br>
+
+                    <strong>Score:</strong>
+                    ${score}
+                    <br><br>
+
+                    <strong>Reasons:</strong>
+                    ${reasons.length
+                        ? reasons.join(", ")
+                        : "Nenhum"}
+
+                `;
+
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                status(
+                    "ERRO"
+                );
+
+
+                assessmentOutput.textContent =
+                    error.stack || error.message || error;
+
+            }
+
+        });
+
 </script>
 
 </body>
