@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste reCAPTCHA Enterprise Challenge</title>
+
+    <script
+        src="https://www.google.com/recaptcha/enterprise.js?render=6Ld1a-AtAAAAALr11xfUhJyQe1cclcvX4sB3R2aT">
+    </script>
+</head>
+
+<body>
+
+<h1>Teste reCAPTCHA Enterprise</h1>
+
+<p>
+    Clique no botão abaixo para executar o reCAPTCHA.
+</p>
+
+<button
+    class="g-recaptcha"
+    data-sitekey="6Ld1a-AtAAAAALr11xfUhJyQe1cclcvX4sB3R2aT"
+    data-callback="onSubmit"
+    data-action="submit">
+    Executar teste
+</button>
+
+<h2>Resultado</h2>
+
+<pre id="result">
+Aguardando execução...
+</pre>
+
+<script>
+    function onSubmit(token) {
+        console.log("TOKEN RECEBIDO:");
+        console.log(token);
+
+        document.getElementById("result").textContent =
+            "TOKEN RECEBIDO:\n\n" + token;
+    }
+</script>
+
+</body>
+</html>
